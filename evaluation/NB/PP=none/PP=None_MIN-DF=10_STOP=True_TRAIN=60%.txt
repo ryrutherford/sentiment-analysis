@@ -1,0 +1,4 @@
+Naive-Bayes Accuracy: 0.7083235638921453
+Naive-Bayes Precision: 0.7253658536585366
+Naive-Bayes Recall: 0.6858856088560885
+Naive-Bayes F1: 0.7050734945471787
