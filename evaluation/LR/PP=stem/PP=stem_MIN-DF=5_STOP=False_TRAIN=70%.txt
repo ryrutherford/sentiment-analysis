@@ -1,4 +1,0 @@
-Logistic Regression Accuracy: 0.7471084713973116
-Logistic Regression Precision: 0.7586649550706034
-Logistic Regression Recall: 0.7318885448916409
-Logistic Regression F1: 0.745036243302868

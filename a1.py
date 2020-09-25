@@ -1,13 +1,20 @@
+"""
+This python script will train, and test ml models on sentences that convey either positive or negative sentiment
+about a movie.
+"""
+
 import nltk
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import MultinomialNB, GaussianNB
 from sklearn import svm
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.linear_model import SGDClassifier
-from sklearn import metrics
+from sklearn.metrics import classification_report
+from sklearn.dummy import DummyClassifier
+from sklearn.metrics import confusion_matrix
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
@@ -105,12 +112,11 @@ def split_data(features, labels, train_size):
     #will return features_train, features_test, label_train, label_test
     return train_test_split(features, labels, train_size=train_size, random_state=42)
 
-#function that will train a naive-bayes model on the training data and then test the model on the test data
-#currently we are looking at 4 metrics (accuracy, precision, recall, and f1) to test the effectiveness of the model
-#coming soon: looking at macro-average and micro-average to help determine model effectiveness
-def naive_bayes_classifier(training_features, training_labels, test_features, test_labels, filename):
-    #create the Gaussian classifier
-    model = GaussianNB()
+#function that will train a multinomial naive-bayes model on the training data and then test the model on the test data
+#looking at 4 metrics (accuracy, precision, recall, and f1) to test the effectiveness of the model
+def multinomial_naive_bayes_classifier(training_features, training_labels, test_features, test_labels, filename):
+    #create the Multinomial Naive Bayes classifier
+    model = MultinomialNB()
 
     #train the model
     model.fit(training_features, training_labels)
@@ -118,10 +124,7 @@ def naive_bayes_classifier(training_features, training_labels, test_features, te
     pred_labels = model.predict(test_features)
 
     with open(filename, 'w', encoding='utf-8') as outfile:
-        outfile.write('Naive-Bayes Accuracy: ' + str(metrics.accuracy_score(test_labels, pred_labels)) + '\n' \
-            + 'Naive-Bayes Precision: ' +  str(metrics.precision_score(test_labels, pred_labels)) + '\n' \
-                + 'Naive-Bayes Recall: ' + str(metrics.recall_score(test_labels, pred_labels)) + '\n' \
-                    + 'Naive-Bayes F1: ' + str(metrics.f1_score(test_labels, pred_labels)))
+        outfile.write(classification_report(test_labels, pred_labels, target_names=["Negative", "Positive"]))
 
 #function that will train a linear-svm model on the training data and then test the model on the test data
 def linear_svm_classifier(training_features, training_labels, test_features, test_labels, filename):
@@ -134,10 +137,7 @@ def linear_svm_classifier(training_features, training_labels, test_features, tes
     pred_labels = model.predict(test_features)
 
     with open(filename, 'w', encoding='utf-8') as outfile:
-        outfile.write('Linear-SVM Accuracy: ' + str(metrics.accuracy_score(test_labels, pred_labels)) + '\n' \
-            + 'Linear-SVM Precision: ' +  str(metrics.precision_score(test_labels, pred_labels)) + '\n' \
-                + 'Linear-SVM Recall: ' + str(metrics.recall_score(test_labels, pred_labels)) + '\n' \
-                    + 'Linear-SVM F1: ' + str(metrics.f1_score(test_labels, pred_labels)))
+        outfile.write(classification_report(test_labels, pred_labels, target_names=["Negative", "Positive"]))
 
 #function that will train a logistic regression model on the training data and then test the model on the test data
 def logistic_regression_classifier(training_features, training_labels, test_features, test_labels, filename):
@@ -150,15 +150,12 @@ def logistic_regression_classifier(training_features, training_labels, test_feat
     pred_labels = model.predict(test_features)
 
     with open(filename, 'w', encoding='utf-8') as outfile:
-        outfile.write('Logistic Regression Accuracy: ' + str(metrics.accuracy_score(test_labels, pred_labels)) + '\n' \
-            + 'Logistic Regression Precision: ' +  str(metrics.precision_score(test_labels, pred_labels)) + '\n' \
-                + 'Logistic Regression Recall: ' + str(metrics.recall_score(test_labels, pred_labels)) + '\n' \
-                    + 'Logistic Regression F1: ' + str(metrics.f1_score(test_labels, pred_labels)))
+        outfile.write(classification_report(test_labels, pred_labels, target_names=["Negative", "Positive"]))
 
-#function that will train a multi layer perceptron neural network model on the training data and then test the model on the test data
-def multi_layer_perceptron_classifier(training_features, training_labels, test_features, test_labels, filename):
-    #create the mlp (nn) model
-    model = MLPClassifier(alpha=1e-5, hidden_layer_sizes=(5,), random_state=1)
+#function that will train a gaussian naive bayes regression model on the training data and then test the model on the test data
+def gaussian_naive_bayes_classifier(training_features, training_labels, test_features, test_labels, filename):
+    #create the Multinomial Naive Bayes classifier
+    model = GaussianNB()
 
     #train the model
     model.fit(training_features, training_labels)
@@ -166,14 +163,26 @@ def multi_layer_perceptron_classifier(training_features, training_labels, test_f
     pred_labels = model.predict(test_features)
 
     with open(filename, 'w', encoding='utf-8') as outfile:
-        outfile.write('Multi Layer Perceptron Accuracy: ' + str(metrics.accuracy_score(test_labels, pred_labels)) + '\n' \
-            + 'Multi Layer Perceptron Precision: ' +  str(metrics.precision_score(test_labels, pred_labels)) + '\n' \
-                + 'Multi Layer Perceptron Recall: ' + str(metrics.recall_score(test_labels, pred_labels)) + '\n' \
-                    + 'Multi Layer Perceptron F1: ' + str(metrics.f1_score(test_labels, pred_labels)))
+        outfile.write(classification_report(test_labels, pred_labels, target_names=["Negative", "Positive"]))
 
-#function that will train the specified classifier model and then test it. there will be 36 versions of the specified model trained and tested
+#function that will train a dummy model on the training set and then predict an outcome uniformly at random
+def dummy_classifier(training_features, training_labels, test_features, test_labels, filename):
+    #create the dummy classifier using the uniform strat
+    model = DummyClassifier(strategy="uniform")
+
+    #train the model
+    model.fit(training_features, training_labels)
+
+    #test the model
+    pred_labels = model.predict(test_features)
+
+    #analyze performance
+    with open(filename, 'w', encoding='utf-8') as outfile:
+        outfile.write(classification_report(test_labels, pred_labels, target_names=["Negative", "Positive"]))
+
+#function that will train the specified classifier model and then test it. there will be 54 versions of the specified model trained and tested
 #the goal is to determing which combination of parameters (min_df, stop words, training size, text pre processing) leads to the most effective model
-def train_and_predict(classifier_type=None):
+def train_and_predict(classifier_type="Dummy"):
     min_df_options = [5, 7, 10]
     stop_word_options = [False, True]
     training_size_options = [.6, .7, .8]
@@ -186,24 +195,26 @@ def train_and_predict(classifier_type=None):
                 for min_df in min_df_options:
                     features_vector = feature_extraction(data, min_df, stop_word_option)
                     features_train, features_test, labels_train, labels_test = split_data(features_vector, labels, training_size_option)
-                    filename = "PP="+str(pp_option)+"_MIN-DF="+str(min_df)+"_STOP="+str(stop_word_option)+"_TRAIN="+str(int(training_size_option*100))+"%.txt"
-                    if(classifier_type == "NB"):
-                        naive_bayes_classifier(features_train, labels_train, features_test, labels_test, filename)
+                    filename = "MODEL="+classifier_type+"_PP="+str(pp_option)+"_MIN-DF="+str(min_df)+"_STOP="+str(stop_word_option)+"_TRAIN="+str(int(training_size_option*100))+"%.txt"
+                    if(classifier_type == "MNB"):
+                        #train and predict with multinomial naive bayes
+                        multinomial_naive_bayes_classifier(features_train, labels_train, features_test, labels_test, filename)
                     elif(classifier_type == "SVM"):
                         #train and predict on svm with linear kernel
                         linear_svm_classifier(features_train, labels_train, features_test, labels_test, filename)
                     elif(classifier_type == "LR"):
                         #train and predict on lr
                         logistic_regression_classifier(features_train, labels_train, features_test, labels_test, filename)
-                    elif(classifier_type == "NN"):
-                        #train and predict on nn
-                        multi_layer_perceptron_classifier(features_train, labels_train, features_test, labels_test, filename)
-                    else:
-                        #predict on dumb classifier --> not done yet
-                        pass
+                    elif(classifier_type == "GNB"):
+                        #train and predict on gnb
+                        gaussian_naive_bayes_classifier(features_train, labels_train, features_test, labels_test, filename)
+                    elif(classifier_type == "Dummy"):
+                        #predict on dumb classifier
+                        dummy_classifier(features_train, labels_train, features_test, labels_test, filename)
 
-#Uncomment to run train and predict and get 36 output files with the models performance metrics
-#train_and_predict("NB")
-#train_and_predict("SVM")
-#train_and_predict("LR")
-#train_and_predict("NN")
+if __name__ == '__main__':
+    train_and_predict("MNB")
+    train_and_predict("SVM")
+    train_and_predict("LR")
+    train_and_predict("GNB")
+    train_and_predict()
